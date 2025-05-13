@@ -3,26 +3,15 @@ package main
 import (
 	"fmt"
 	"log"
-	"path/filepath"
 
 	"github.com/alexwoo79/go_learn/datafile"
 )
 
-var (
-	// basePath is the base path of the project
-	basePath string = "/Users/alex/go/src/github.com/alexwoo79/go_learn"
-	// relativePath is the relative path of the file
-	relativePath string = "datafile/votes.txt"
-	// filePath is the absolute path of the file
-	filePath string = filepath.Join(basePath, relativePath)
-	// lines is the slice of strings read from the file
-)
-
 func main() {
-
+	var path string = "datafile/votes.txt"
 	// 主函数
 	// 读取文件
-	lines, err := datafile.GetStrings(filePath)
+	lines, err := datafile.GetStrings(path)
 	if err != nil {
 		log.Fatal(err)
 	}

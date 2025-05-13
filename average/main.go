@@ -27,7 +27,7 @@ func Average(numbers []float64) float64 {
 // Variance is a function that calculates the variance of an array of integers
 func main() {
 	// Create an array of integers
-	numbers, err := datafile.GetFloats("/Users/alex/go/src/github.com/alexwoo79/go_learn/datafile/data.txt")
+	numbers, err := datafile.GetFloats("datafile/data.txt")
 	if err != nil {
 		log.Fatal(err)
 	}

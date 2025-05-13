@@ -10,7 +10,7 @@ import (
 // ReadFile reads a file and returns its contents as a slice of float64
 func main() {
 	// Open the file
-	file, err := os.Open("/Users/alex/go/src/github.com/alexwoo79/go_learn/datafile/data.txt")
+	file, err := os.Open("datafile/data.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
