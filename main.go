@@ -2,33 +2,35 @@ package main
 
 import (
 	"fmt"
-	"log"
 
-	"github.com/alexwoo79/go_learn/calendar"
+	"github.com/alexwoo79/go_learn/gadget"
 )
 
-func main() {
+func playList(device gadget.Player, songs []string) {
+	for _, song := range songs {
+		device.Play(song)
+	}
+	device.Stop()
+}
+func TryOut(player gadget.Player) {
+	player.Play("song.mp3")
+	player.Stop()
+	recorder, ok := player.(gadget.TapeRecorder)
+	if ok {
+		recorder.Record()
+	}
 
-	event := calendar.Event{}
-	err := event.SetTitle("Mom's birthday")
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = event.SetYear(2019)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = event.SetMonth(5)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = event.SetDay(5)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(event.Title())
-	fmt.Println(event.Year())
-	fmt.Println(event.Month())
-	fmt.Println(event.Day())
+}
+func main() {
+	mixtape := []string{"Jessie's Girl", "Whip It", "9 to 5"}
+	var player gadget.Player = gadget.TapePlayer{}
+	fmt.Println("TapePlayer Now playing:")
+	playList(player, mixtape)
+	fmt.Println("TapeRecorder Now playing:")
+	player = gadget.TapeRecorder{}
+	playList(player, mixtape)
+
+	TryOut(gadget.TapePlayer{})
+	TryOut(gadget.TapeRecorder{})
 
 }
