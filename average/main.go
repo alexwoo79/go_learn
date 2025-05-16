@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/alexwoo79/go_learn/datafile"
+	"go_learn/datafile"
 )
 
 // Average is a function that calculates the average of an array of integers
