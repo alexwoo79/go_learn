@@ -40,8 +40,10 @@ go build -ldflags "\
   -o proxyctl .
 ```
 
-`go install` 安装的二进制未注入版本信息，`version` 命令会显示
-`dev` / `unknown`；需要带版本号的可执行文件请使用上面的 `go build` 方式。
+通过 `go install ...@vX.Y.Z` 安装的二进制会自动从构建信息读取模块版本，
+`proxyctl version` / `proxyctl -v` 会显示对应的 `vX.Y.Z`；本地
+`go build` 未注入 ldflags 时仍显示 `dev`。需要 commit/构建时间等完整
+元数据请使用上面的 ldflags 方式构建发布产物。
 
 也可以直接安装到 `$GOBIN`：
 
@@ -60,7 +62,8 @@ git push origin proxyctl/v0.1.1
 ```
 
 发布后即可用 `@latest` / `@v0.1.1` 安装。如需让 `proxyctl version`
-显示真实版本号，在同一 tag 上按上面的 ldflags 命令构建发布产物，例如：
+带完整的 commit/构建时间，在同一 tag 上按上面的 ldflags 命令构建发布产物，
+例如：
 
 ```bash
 VERSION=proxyctl/v0.1.1

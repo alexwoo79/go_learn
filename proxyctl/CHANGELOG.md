@@ -3,6 +3,12 @@
 本项目按里程碑记录变更。当前处于开发阶段，版本为 `dev`，所有变更均未发布、
 未打 tag、未提交到远端。
 
+## [dev] 2026-09-09 — version 自动显示模块版本
+
+- `proxyctl version` / `proxyctl -v` 在通过 `go install ...@vX.Y.Z` 安装时
+  自动读取 Go 构建信息中的模块版本，不再固定显示 dev；
+  ldflags 注入的版本仍然优先。
+
 ## [dev] 2026-09-09 — OpenAI/ChatGPT 默认走上游代理
 
 - TUN 配置默认不再把 openai.com/chatgpt.com 等域名设为 DIRECT，而是跟随

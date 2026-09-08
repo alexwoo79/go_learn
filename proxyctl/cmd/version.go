@@ -20,13 +20,34 @@ var (
 	date    = "unknown"
 )
 
+// displayVersion 返回要展示的版本号：
+// ldflags 注入的版本优先；否则读取 go install module@version 写入构建信息
+// 的模块版本（如 v0.2.1）；都没有时回退 dev。
+func displayVersion() string {
+	if version != "" && version != "dev" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok {
+		v := info.Main.Version
+		if v != "" && v != "(devel)" {
+			return v
+		}
+	}
+	return version
+}
+
+// init 让 `proxyctl --version` / `proxyctl -v` 也使用自动解析的版本号。
+func init() {
+	rootCmd.Version = displayVersion()
+}
+
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "显示版本信息",
 	Args:  usageArgs(cobra.NoArgs),
 	Run: func(cmd *cobra.Command, args []string) {
 		out := cmd.OutOrStdout()
-		fmt.Fprintf(out, "proxyctl %s (commit: %s, built: %s)\n", version, commit, date)
+		fmt.Fprintf(out, "proxyctl %s (commit: %s, built: %s)\n", displayVersion(), commit, date)
 		if info, ok := debug.ReadBuildInfo(); ok {
 			fmt.Fprintf(out, "go: %s\n", info.GoVersion)
 		}
