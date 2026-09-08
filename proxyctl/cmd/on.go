@@ -16,6 +16,7 @@ var (
 	onAddressFlag string
 	onHostFlag    string
 	onPortFlag    string
+	onNoToolsFlag bool
 )
 
 var onCmd = &cobra.Command{
@@ -27,11 +28,15 @@ var onCmd = &cobra.Command{
   2. git 全局代理（http.proxy / https.proxy）
   3. 开发工具配置（npm / pnpm / pip / cargo / docker / brew）
   4. 终端环境变量（新开终端自动生效，或手动 eval）
-执行前会保存快照，可用 proxyctl off / restore 恢复。
+	执行前会保存快照，可用 proxyctl off / restore 恢复。
 
 代理程序不在本机运行时（例如上游在局域网其他机器），可用显式地址：
   proxyctl on --address 10.10.10.113:7892
-  proxyctl on --host 10.10.10.113 --port 7892`,
+  proxyctl on --host 10.10.10.113 --port 7892
+
+如果只用 TUN 等系统级代理、不希望改动 npm/pip/cargo 等工具的配置文件，
+可加 --no-tools 跳过开发工具配置：
+  proxyctl on --address 10.10.10.113:7892 --no-tools`,
 	Args: usageArgs(cobra.NoArgs),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var (
@@ -51,13 +56,15 @@ var onCmd = &cobra.Command{
 		out := cmd.OutOrStdout()
 		fmt.Fprintf(out, "检测到代理程序: %s (%s)\n", d.Command, d.URL())
 
-		// 1. 先保存快照（系统 + git + tools），保证 off / restore 可恢复
+		// 1. 先保存快照（系统 + git；未跳过时含 tools），保证 off / restore 可恢复
 		path, err := saveStateSnapshot()
 		if err != nil {
 			return err
 		}
-		if err := snapshotToolConfigs(toolproxy.Supported()); err != nil {
-			return err
+		if !onNoToolsFlag {
+			if err := snapshotToolConfigs(toolproxy.Supported()); err != nil {
+				return err
+			}
 		}
 
 		// 2. 设置系统代理
@@ -89,11 +96,15 @@ var onCmd = &cobra.Command{
 		}
 		fmt.Fprintf(out, "已设置 git 代理: %s\n", url)
 
-		// 4. 应用开发工具配置
-		if err := toolproxy.ApplyTo(toolproxy.Supported(), url); err != nil {
-			return fmt.Errorf("应用开发工具代理失败: %w", err)
+		// 4. 应用开发工具配置（--no-tools 时跳过）
+		if !onNoToolsFlag {
+			if err := toolproxy.ApplyTo(toolproxy.Supported(), url); err != nil {
+				return fmt.Errorf("应用开发工具代理失败: %w", err)
+			}
+			fmt.Fprintf(out, "已应用开发工具代理：%s\n", strings.Join(toolNames(toolproxy.Supported()), ", "))
+		} else {
+			fmt.Fprintln(out, "已跳过开发工具代理配置（--no-tools）")
 		}
-		fmt.Fprintf(out, "已应用开发工具代理：%s\n", strings.Join(toolNames(toolproxy.Supported()), ", "))
 
 		// 5. 提示终端环境变量
 		fmt.Fprintf(out, "已保存快照: %s\n", path)
@@ -144,6 +155,7 @@ func init() {
 	onCmd.Flags().StringVarP(&onAddressFlag, "address", "a", "", "显式代理地址 HOST:PORT（HTTP；可配合 PROXY_HOST/PROXY_PORT）")
 	onCmd.Flags().StringVarP(&onHostFlag, "host", "H", "", "显式代理主机（默认取自 PROXY_HOST）")
 	onCmd.Flags().StringVarP(&onPortFlag, "port", "P", "", "显式代理端口（默认取自 PROXY_PORT 或 7892）")
+	onCmd.Flags().BoolVar(&onNoToolsFlag, "no-tools", false, "不写入 npm/pnpm/pip/cargo/docker/brew 的代理配置")
 }
 
 var offCmd = &cobra.Command{

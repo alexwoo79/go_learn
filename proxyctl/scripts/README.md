@@ -45,14 +45,22 @@ source ~/proxyctl-scripts/proxy-off.sh
 ## TUN 模式（可选）
 
 `tun-*.sh` 依赖 `mihomo`（默认 `~/.local/bin/mihomo`），开启系统级 TUN，
-所有应用自动走代理。上游地址读取 proxyctl 生成的
-`~/.config/environment.d/proxy.conf`，因此与 `proxyctl on --address ...`
-保持一致；Codex/OpenAI 与 DeepSeek 域名固定 DIRECT，不会进入 TUN。
+所有应用自动走代理。上游地址可直接用 `--address` 指定，或读取 proxyctl
+生成的 `~/.config/environment.d/proxy.conf`；Codex/OpenAI 与 DeepSeek
+域名固定 DIRECT，不会进入 TUN。
 
 ```bash
 ./tun-on.sh
+./tun-on.sh --address 10.0.0.5:7890   # 直接指定上游，无需先跑 proxyctl on
 ./tun-status.sh
 ./tun-off.sh
+```
+
+开启 TUN 后所有应用都会由系统网络层接管，因此不需要再给 npm/pip/cargo
+等工具单独配置代理；`proxyctl on` 配合 `--no-tools` 可跳过工具配置：
+
+```bash
+proxyctl on --address 10.0.0.5:7890 --no-tools
 ```
 
 Chromium/Chrome 在启动时读取代理 flags，开关代理后需重启浏览器。

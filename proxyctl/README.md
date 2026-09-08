@@ -299,6 +299,13 @@ proxyctl on --address 10.10.10.113:7892
 显式地址默认按“HTTP/HTTPS + SOCKS 同址混合端口”处理（与 proxy-on.sh 对
 GNOME 系统代理的设置一致）。
 
+若只打算用 TUN 等系统级代理、不需要 npm/pip/cargo 等工具单独走代理，
+可在 `on` 时跳过开发工具配置：
+
+```bash
+proxyctl on --address 10.10.10.113:7892 --no-tools
+```
+
 ### apply 与当前终端
 
 `apply` 设置的是 git 全局配置，只对之后的 git 命令生效。子进程无法修改父 shell 的环境变量，因此若要让当前终端里的 HTTP 请求走代理，需手动执行命令输出的 `export` 提示。
@@ -402,6 +409,14 @@ export PROXY_PORT=7890
 ```bash
 proxyctl off
 eval "$(proxyctl env --clear)"
+```
+
+只开 TUN、不写 tools 的最小流程（tun-on.sh 可直接指定上游，无需先跑
+`proxyctl on`）：
+
+```bash
+./proxyctl/scripts/tun-on.sh --address 10.0.0.5:7890
+./proxyctl/scripts/tun-status.sh
 ```
 
 ## 退出码

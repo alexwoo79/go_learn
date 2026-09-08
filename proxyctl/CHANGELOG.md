@@ -3,6 +3,13 @@
 本项目按里程碑记录变更。当前处于开发阶段，版本为 `dev`，所有变更均未发布、
 未打 tag、未提交到远端。
 
+## [dev] 2026-09-09 — on --no-tools 与 tun-on 显式上游
+
+- `proxyctl on` 新增 `--no-tools`：只设置系统/桌面、git 与会话环境，
+  跳过 npm/pnpm/pip/cargo/docker/brew 的代理配置，适合 TUN 全系统代理场景。
+- `tun-on.sh` 支持 `--address HOST:PORT` / `--host` / `--port`，
+  开启 TUN 前不再必须先用 proxyctl/proxy-on 写入 environment.d 文件。
+
 ## [dev] 2026-09-08 — status 增加 Omarchy 系统详情
 
 - `proxyctl status` 在 Omarchy 上自动追加“Omarchy 系统设置”段落：
