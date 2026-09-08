@@ -6,7 +6,7 @@ proxyctl 是一个系统代理与端口管理命令行工具：查看系统代�
 
 ```console
 $ proxyctl status
-=== macOS 系统代理 ===
+=== 系统代理 ===
 HTTP   代理: 未启用
 HTTPS  代理: 未启用
 SOCKS  代理: 未启用
@@ -27,22 +27,51 @@ PAC    自动代理: 未启用
 go build -o proxyctl .
 ```
 
-建议在构建时注入版本信息（版本号、commit、构建时间）：
+建议在构建时注入版本信息（版本号、commit、构建时间）。版本号可以直接取自
+最新 tag：
 
 ```bash
+VERSION=$(git describe --tags --match 'proxyctl/v*' --abbrev=0 2>/dev/null | sed 's|^proxyctl/||')
+[ -n "$VERSION" ] || VERSION=dev
 go build -ldflags "\
-  -X github.com/alexwoo79/go_coding/proxyctl/cmd.version=1.0.0 \
+  -X github.com/alexwoo79/go_coding/proxyctl/cmd.version=$VERSION \
   -X github.com/alexwoo79/go_coding/proxyctl/cmd.commit=$(git rev-parse --short HEAD) \
   -X github.com/alexwoo79/go_coding/proxyctl/cmd.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   -o proxyctl .
 ```
 
-未注入版本信息时，`version` 命令会显示 `dev` / `unknown`。
+`go install` 安装的二进制未注入版本信息，`version` 命令会显示
+`dev` / `unknown`；需要带版本号的可执行文件请使用上面的 `go build` 方式。
 
 也可以直接安装到 `$GOBIN`：
 
 ```bash
 go install github.com/alexwoo79/go_coding/proxyctl@latest
+```
+
+## 发布新版本
+
+模块位于仓库的 `proxyctl/` 子目录，因此版本 tag 必须以 `proxyctl/` 为前缀：
+
+```bash
+cd go_coding
+git tag -a proxyctl/v0.1.1 -m "proxyctl v0.1.1: ..."
+git push origin proxyctl/v0.1.1
+```
+
+发布后即可用 `@latest` / `@v0.1.1` 安装。如需让 `proxyctl version`
+显示真实版本号，在同一 tag 上按上面的 ldflags 命令构建发布产物，例如：
+
+```bash
+VERSION=proxyctl/v0.1.1
+VERSION=${VERSION#proxyctl/}
+cd proxyctl
+go build -ldflags "\
+  -X github.com/alexwoo79/go_coding/proxyctl/cmd.version=$VERSION \
+  -X github.com/alexwoo79/go_coding/proxyctl/cmd.commit=$(git rev-parse --short HEAD) \
+  -X github.com/alexwoo79/go_coding/proxyctl/cmd.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  -o proxyctl .
+./proxyctl version
 ```
 
 ## 快速开始
