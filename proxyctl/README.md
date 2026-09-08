@@ -360,6 +360,50 @@ cd scripts
 当前终端生效需要 `source scripts/proxy-on.sh`（或
 `eval "$(proxyctl env)"`），详见 `scripts/README.md`。
 
+### 在 Omarchy 上指定代理 IP/端口（样板）
+
+```bash
+# 一次性指定地址
+proxyctl on --address 10.0.0.5:7890
+proxyctl on --host 10.0.0.5 --port 7890
+
+# 当前终端立即生效
+eval "$(proxyctl env)"
+
+# 查看状态
+proxyctl status
+```
+
+配合薄封装脚本（source 时同时设置当前终端）：
+
+```bash
+source proxyctl/scripts/proxy-on.sh --address 10.0.0.5:7890
+```
+
+把常用地址保存为 profile 后一键切换：
+
+```bash
+proxyctl on --address 10.0.0.5:7890
+proxyctl profile save home       # 保存当前端点集为 "home"
+proxyctl profile use home        # 切换回 home
+proxyctl profile use direct      # 直连
+proxyctl apply                   # profile 切换后同步 git 代理
+```
+
+让新终端自动使用该 IP/端口（写入 `~/.bashrc` 或 `~/.zshrc`）：
+
+```bash
+export PROXY_HOST=10.0.0.5
+export PROXY_PORT=7890
+```
+
+关闭：
+
+```bash
+proxyctl off
+eval "$(proxyctl env --clear)"
+```
+
 ## 退出码
 
 | 退出码 | 含义 |
