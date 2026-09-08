@@ -57,6 +57,7 @@ func init() {
 		toolsCmd,
 		portCmd,
 		profileCmd,
+		tunCmd,
 		versionCmd,
 	)
 }

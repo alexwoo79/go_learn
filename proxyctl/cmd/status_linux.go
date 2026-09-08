@@ -3,13 +3,14 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/alexwoo79/go_coding/proxyctl/internal/tun"
 )
 
 // proxyEnvVarNames 是 status 关心的终端代理环境变量。
@@ -83,52 +84,38 @@ func printOmarchyStatus(out io.Writer) {
 
 // printTUNStatus 输出 mihomo TUN 服务、虚拟网卡、上游与直连保护规则。
 func printTUNStatus(out io.Writer) {
+	st, err := tun.ReadStatus()
+	if err != nil {
+		fmt.Fprintf(out, "TUN/mihomo: 读取失败: %v\n", err)
+		return
+	}
 	fmt.Fprintln(out, "TUN/mihomo:")
-	fmt.Fprintf(out, "  mihomo-tun.service: %s\n", userUnitActive("mihomo-tun.service"))
-
-	ifaces := metaInterfaces()
-	if len(ifaces) == 0 {
+	switch st.Service {
+	case "running":
+		fmt.Fprintln(out, "  mihomo-tun.service: 运行中")
+	case "systemctl 不可用":
+		fmt.Fprintf(out, "  mihomo-tun.service: %s\n", st.Service)
+	default:
+		fmt.Fprintln(out, "  mihomo-tun.service: 已停止")
+	}
+	if len(st.Interfaces) == 0 {
 		fmt.Fprintln(out, "  虚拟网卡 Meta: 未创建")
 	} else {
-		fmt.Fprintf(out, "  虚拟网卡 Meta: %s\n", strings.Join(ifaces, ", "))
+		fmt.Fprintf(out, "  虚拟网卡 Meta: %s\n", strings.Join(st.Interfaces, ", "))
 	}
-
-	cfg := linuxConfigPath("mihomo", "config.yaml")
-	data, err := os.ReadFile(cfg)
-	if err != nil {
+	if !st.ConfigExists {
 		fmt.Fprintln(out, "  mihomo 配置: 不存在")
 		return
 	}
-	fmt.Fprintf(out, "  mihomo 配置: %s\n", cfg)
-
-	var upstream, direct []string
-	scanner := bufio.NewScanner(strings.NewReader(string(data)))
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		switch {
-		case strings.HasPrefix(line, "server:"):
-			if server := strings.TrimSpace(strings.TrimPrefix(line, "server:")); server != "" {
-				upstream = append(upstream, server)
-			}
-		case strings.HasPrefix(line, "port:"):
-			if p := strings.TrimSpace(strings.TrimPrefix(line, "port:")); p != "" && len(upstream) > 0 {
-				upstream[len(upstream)-1] += ":" + p
-			}
-		case strings.Contains(line, "DOMAIN-SUFFIX") && strings.Contains(line, "DIRECT"):
-			parts := strings.Split(line, ",")
-			if len(parts) >= 3 {
-				direct = append(direct, parts[1])
-			}
-		}
-	}
-	if len(upstream) > 0 {
-		fmt.Fprintf(out, "  上游: %s\n", strings.Join(upstream, " "))
+	fmt.Fprintf(out, "  mihomo 配置: %s\n", st.ConfigPath)
+	if st.Upstream != "" {
+		fmt.Fprintf(out, "  上游: %s\n", st.Upstream)
 	} else {
 		fmt.Fprintln(out, "  上游: 未找到 server/port")
 	}
-	if len(direct) > 0 {
+	if len(st.Protected) > 0 {
 		fmt.Fprintln(out, "  直连保护（DIRECT）:")
-		for _, d := range direct {
+		for _, d := range st.Protected {
 			fmt.Fprintf(out, "    %s\n", d)
 		}
 	}
@@ -157,35 +144,4 @@ func linuxConfigPath(parts ...string) string {
 		base = filepath.Join(home, ".config")
 	}
 	return filepath.Join(append([]string{base}, parts...)...)
-}
-
-// userUnitActive 返回 systemd 用户单元状态；命令不可用时返回提示。
-func userUnitActive(unit string) string {
-	if _, err := exec.LookPath("systemctl"); err != nil {
-		return "systemctl 不可用"
-	}
-	out, err := exec.Command("systemctl", "--user", "is-active", unit).Output()
-	if err != nil {
-		return "已停止"
-	}
-	return strings.TrimSpace(string(out))
-}
-
-// metaInterfaces 返回名字包含 Meta 的网络接口列表。
-func metaInterfaces() []string {
-	if _, err := exec.LookPath("ip"); err != nil {
-		return nil
-	}
-	out, err := exec.Command("ip", "-br", "link").Output()
-	if err != nil {
-		return nil
-	}
-	var ifaces []string
-	for _, line := range strings.Split(string(out), "\n") {
-		fields := strings.Fields(line)
-		if len(fields) > 0 && strings.Contains(strings.ToLower(fields[0]), "meta") {
-			ifaces = append(ifaces, fields[0])
-		}
-	}
-	return ifaces
 }

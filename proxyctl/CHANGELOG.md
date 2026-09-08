@@ -3,6 +3,18 @@
 本项目按里程碑记录变更。当前处于开发阶段，版本为 `dev`，所有变更均未发布、
 未打 tag、未提交到远端。
 
+## [dev] 2026-09-09 — TUN 模式整合进 proxyctl
+
+- 新增 `proxyctl tun on/off/status`：生成与 tun-on.sh 一致的 mihomo TUN
+  配置（含 OpenAI/DeepSeek DIRECT 保护），`mihomo -t` 校验后通过
+  systemd 用户服务启动；关闭时清理受管配置与缓存。
+- 上游地址支持 `--address/--host/--port`，并按
+  PROXY_HOST/PROXY_PORT、当前系统代理、已有配置顺序回退。
+- 用户单元 `mihomo-tun.service` 缺失时自动创建（不覆盖已有单元）。
+- `proxyctl status` 的 Omarchy 段落与 `proxyctl tun status` 共用
+  internal/tun 读取逻辑。
+- 新增 internal/tun 单元测试（配置生成与解析）。
+
 ## [dev] 2026-09-09 — on --no-tools 与 tun-on 显式上游
 
 - `proxyctl on` 新增 `--no-tools`：只设置系统/桌面、git 与会话环境，

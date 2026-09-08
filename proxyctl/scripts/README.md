@@ -63,4 +63,13 @@ source ~/proxyctl-scripts/proxy-off.sh
 proxyctl on --address 10.0.0.5:7890 --no-tools
 ```
 
+也可以完全用 proxyctl 内置的 TUN 管理（生成配置、启动/停止服务、查看
+状态由 Go 程序完成）：
+
+```bash
+proxyctl tun on --address 10.0.0.5:7890
+proxyctl tun status
+proxyctl tun off
+```
+
 Chromium/Chrome 在启动时读取代理 flags，开关代理后需重启浏览器。

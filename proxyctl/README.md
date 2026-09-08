@@ -87,6 +87,9 @@ proxyctl test                # 网络连通性测试
 proxyctl doctor              # 一键诊断开发环境网络状态
 proxyctl env                 # 生成/安装终端代理环境变量
 proxyctl tools               # 管理 npm/pnpm/pip/cargo/docker/brew 的代理配置
+proxyctl tun on --address 10.0.0.5:7890   # 开启系统级 TUN（mihomo）
+proxyctl tun status          # 查看 TUN 状态
+proxyctl tun off             # 关闭 TUN
 proxyctl status --json       # 以 JSON 输出状态（便于 AI Agent 消费）
 proxyctl profile list        # 列出系统代理 profile
 proxyctl port 7892           # 查看 7892 端口占用
@@ -107,6 +110,7 @@ proxyctl port 7892 --kill    # 结束占用 7892 端口的进程
 | `doctor` | 一键诊断：系统代理、git 代理、端口监听、连通性、环境变量，发现问题时退出码为 1 |
 | `env` | 把当前系统代理生成为终端环境变量脚本，或安装到 shell 配置文件 |
 | `tools` | 读写 npm/pnpm/pip/cargo/docker/brew 各自的代理配置文件（apply/clear/restore/list） |
+| `tun` | 管理 mihomo 系统级 TUN 代理（on/off/status），全应用自动走代理 |
 | `port` | 检查 TCP 端口占用，可结束占用进程 |
 | `profile` | 保存 / 列出 / 应用 / 删除系统代理 profile |
 | `version` | 显示版本、commit、构建时间与 Go 版本 |
@@ -366,6 +370,25 @@ cd scripts
 
 当前终端生效需要 `source scripts/proxy-on.sh`（或
 `eval "$(proxyctl env)"`），详见 `scripts/README.md`。
+
+### proxyctl tun（mihomo 系统级 TUN）
+
+`proxyctl tun` 直接把 TUN 模式整合进程序：生成与 `tun-on.sh` 一致的受管
+mihomo 配置（含 Codex/OpenAI、DeepSeek DIRECT 直连保护），校验后通过
+systemd 用户服务 `mihomo-tun.service` 启动：
+
+```bash
+proxyctl tun on --address 10.0.0.5:7890
+proxyctl tun status
+proxyctl tun off
+```
+
+上游地址缺省按 `--address/--host/--port` → `PROXY_HOST/PROXY_PORT` →
+当前系统代理 → 已有 mihomo 配置的顺序解析。依赖 `mihomo` 与
+`systemctl --user`；如果用户单元不存在会自动创建（不会覆盖已有单元）。
+
+开启 TUN 后所有应用由网络层接管，无需再给 npm/pip/cargo 等工具单独配置
+代理；应用级代理可用 `proxyctl on --no-tools` 只设置系统层而不写工具配置。
 
 ### 在 Omarchy 上指定代理 IP/端口（样板）
 
