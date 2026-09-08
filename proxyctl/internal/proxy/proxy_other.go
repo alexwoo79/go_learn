@@ -1,30 +1,30 @@
-//go:build !darwin && !windows
+//go:build !darwin && !windows && !linux
 
 package proxy
 
 import "errors"
 
-// Get 在非 macOS/Windows 平台上无法读取系统代理。
+// Get 在没有系统代理后端（macOS/Windows/Linux+GNOME）的平台上无法读取。
 func Get() (*Info, error) {
-	return nil, errors.New("该系统代理命令仅在 macOS/Windows 上支持")
+	return nil, errors.New("当前平台不支持系统代理管理（支持 macOS、Windows、Linux/GNOME 桌面）")
 }
 
-// Clear 在非 macOS/Windows 平台上不支持。
+// Clear 在没有系统代理后端的平台上不支持。
 func Clear() error {
-	return errors.New("该系统代理命令仅在 macOS/Windows 上支持")
+	return errors.New("当前平台不支持系统代理管理（支持 macOS、Windows、Linux/GNOME 桌面）")
 }
 
-// SnapshotSystem 在非 macOS/Windows 平台上不支持。
+// SnapshotSystem 在没有系统代理后端的平台上不支持。
 func SnapshotSystem() (SystemSnapshot, error) {
-	return SystemSnapshot{}, errors.New("该系统代理快照仅在 macOS/Windows 上支持")
+	return SystemSnapshot{}, errors.New("当前平台不支持系统代理管理（支持 macOS、Windows、Linux/GNOME 桌面）")
 }
 
-// RestoreSystem 在非 macOS/Windows 平台上不支持。
+// RestoreSystem 在没有系统代理后端的平台上不支持。
 func RestoreSystem(SystemSnapshot) error {
-	return errors.New("该系统代理快照仅在 macOS/Windows 上支持")
+	return errors.New("当前平台不支持系统代理管理（支持 macOS、Windows、Linux/GNOME 桌面）")
 }
 
-// ApplyProfile 在非 macOS/Windows 平台上不支持。
+// ApplyProfile 在没有系统代理后端的平台上不支持。
 func ApplyProfile(*EndpointState, *EndpointState, *EndpointState, *PACState) error {
-	return errors.New("该系统代理配置仅在 macOS/Windows 上支持")
+	return errors.New("当前平台不支持系统代理管理（支持 macOS、Windows、Linux/GNOME 桌面）")
 }

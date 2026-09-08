@@ -6,9 +6,9 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "proxyctl",
-	Short: "macOS 代理与端口管理 CLI 工具",
-	Long: `proxyctl 是一个基于 macOS 系统代理设置的命令行工具，
-可以检测系统代理、自动配置 git 代理、执行网络连通性测试，
+	Short: "系统代理与端口管理 CLI 工具",
+	Long: `proxyctl 是一个基于系统代理设置的命令行工具（macOS / Windows /
+Linux+GNOME），可以检测系统代理、自动配置 git 代理、执行网络连通性测试，
 以及检查端口占用并结束占用进程。
 
 用法示例：

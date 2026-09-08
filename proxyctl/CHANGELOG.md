@@ -3,6 +3,40 @@
 本项目按里程碑记录变更。当前处于开发阶段，版本为 `dev`，所有变更均未发布、
 未打 tag、未提交到远端。
 
+## [dev] 2026-09-08 — Linux/GNOME 系统代理支持
+
+proxyctl 此前在 Linux 上只支持 `test` / `port` 等与系统代理无关的命令，
+系统代理后端仅实现 macOS 与 Windows。本次新增 Linux+GNOME 桌面后端，
+并把 Omarchy 的 `proxy-on.sh` / `proxy-off.sh` / `proxy-status.sh`
+改成 proxyctl 的薄封装。
+
+### 新增
+
+- `internal/proxy` 新增 Linux 后端（`proxy_linux.go`），把“系统代理”
+  实现为与旧脚本一致的三层：
+  - GNOME `gsettings org.gnome.system.proxy`；
+  - `~/.config/environment.d/proxy.conf` + systemd user session / D-Bus；
+  - `chromium-flags.conf` / `chrome-flags.conf` 的 `--proxy-server`。
+- Linux 上 `status` / `apply` / `clear` / `on` / `off` / `restore` /
+  `profile` / `env` 现在均可使用；快照（state.json）会记录 Linux 桌面、
+  会话环境文件与 Chromium 文件状态，`restore` 可完整还原。
+- `on` 新增 `--address HOST:PORT` / `--host` / `--port`：代理程序在其他
+  机器时无需自动检测；显式地址按 HTTP/HTTPS + SOCKS 同址混合端口处理，
+  与 Omarchy 脚本语义一致。
+- `doctor` 在 Linux 上启用系统代理检查，并检查 `lsof`。
+- 新增 Linux 辅助逻辑单测（gsettings 文本解析、会话环境文件读写与
+  清理、Chromium flags 编辑与恢复、快照恢复）。
+
+### 修复
+
+- `git config --global --unset` 在配置项不存在时退出码为 5，
+  此前未被识别为“未设置”，导致 `restore` 在空配置上失败；
+  现与退出码 1 一样映射为 `ErrNotSet`。
+
+### 文档
+
+- proxyctl README 平台支持表增加 Linux+GNOME 列与 Linux 生效机制说明。
+
 ## [dev] 2026-08-11 — 架构重构与功能完善
 
 基于一轮代码级 review 的结论，对 proxyctl 做了 P0 安全修复与功能扩展，

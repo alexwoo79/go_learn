@@ -19,12 +19,13 @@ type Runner interface {
 // ExecRunner 使用真实 git 命令执行。
 type ExecRunner struct{}
 
-// Run 执行 git 命令；退出码为 1 时返回 ErrNotSet。
+// Run 执行 git 命令；git config --get 未设置返回退出码 1、
+// git config --unset 不存在返回退出码 5，两种情况都映射为 ErrNotSet。
 func (ExecRunner) Run(args ...string) ([]byte, error) {
 	out, err := exec.Command("git", args...).CombinedOutput()
 	if err != nil {
 		var ee *exec.ExitError
-		if errors.As(err, &ee) && ee.ExitCode() == 1 {
+		if errors.As(err, &ee) && (ee.ExitCode() == 1 || ee.ExitCode() == 5) {
 			return out, ErrNotSet
 		}
 		return out, err

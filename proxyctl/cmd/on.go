@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 
 	"github.com/alexwoo79/go_coding/proxyctl/internal/git"
@@ -10,19 +12,39 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	onAddressFlag string
+	onHostFlag    string
+	onPortFlag    string
+)
+
 var onCmd = &cobra.Command{
 	Use:   "on",
 	Short: "自动检测代理程序并一键开启",
 	Long: `自动检测系统中运行中的代理程序（Clash/Mihomo/v2ray/xray/sing-box 等）
 及其端口，然后把代理应用到：
-  1. 系统代理（macOS 所有网络服务的 HTTP/SOCKS）
+  1. 系统代理（桌面/系统级 HTTP/SOCKS 设置）
   2. git 全局代理（http.proxy / https.proxy）
   3. 开发工具配置（npm / pnpm / pip / cargo / docker / brew）
   4. 终端环境变量（新开终端自动生效，或手动 eval）
-执行前会保存快照，可用 proxyctl off / restore 恢复。`,
+执行前会保存快照，可用 proxyctl off / restore 恢复。
+
+代理程序不在本机运行时（例如上游在局域网其他机器），可用显式地址：
+  proxyctl on --address 10.10.10.113:7892
+  proxyctl on --host 10.10.10.113 --port 7892`,
 	Args: usageArgs(cobra.NoArgs),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		d, err := proxy.Detect()
+		var (
+			d        proxy.Detected
+			err      error
+			explicit bool
+		)
+		if onAddressFlag != "" || onHostFlag != "" || onPortFlag != "" {
+			d, err = detectedFromFlags()
+			explicit = err == nil
+		} else {
+			d, err = proxy.Detect()
+		}
 		if err != nil {
 			return err
 		}
@@ -39,13 +61,19 @@ var onCmd = &cobra.Command{
 		}
 
 		// 2. 设置系统代理
-		var httpEP, socksEP *proxy.EndpointState
-		if d.Scheme == "socks5h" {
+		var httpEP, httpsEP, socksEP *proxy.EndpointState
+		if explicit && d.Scheme != "socks5h" {
+			// 显式地址默认按混合端口处理：HTTP/HTTPS 与 SOCKS 都指向同一
+			// 地址，与旧 proxy-on.sh 对 GNOME 系统代理的设置一致。
+			httpEP = &proxy.EndpointState{Enabled: true, Host: d.Host, Port: d.Port}
+			httpsEP = &proxy.EndpointState{Enabled: true, Host: d.Host, Port: d.Port}
+			socksEP = &proxy.EndpointState{Enabled: true, Host: d.Host, Port: d.Port}
+		} else if d.Scheme == "socks5h" {
 			socksEP = &proxy.EndpointState{Enabled: true, Host: d.Host, Port: d.Port}
 		} else {
 			httpEP = &proxy.EndpointState{Enabled: true, Host: d.Host, Port: d.Port}
 		}
-		if err := proxy.ApplyProfile(httpEP, nil, socksEP, nil); err != nil {
+		if err := proxy.ApplyProfile(httpEP, httpsEP, socksEP, nil); err != nil {
 			return fmt.Errorf("设置系统代理失败: %w", err)
 		}
 		fmt.Fprintf(out, "已设置系统代理: %s\n", d.URL())
@@ -73,6 +101,49 @@ var onCmd = &cobra.Command{
 		fmt.Fprintln(out, "新开终端自动生效可先运行: proxyctl env install")
 		return nil
 	},
+}
+
+// detectedFromFlags 根据 --address/--host/--port 构造显式代理端点。
+// host/port 允许通过 PROXY_HOST / PROXY_PORT 环境变量覆盖（与旧脚本一致）。
+func detectedFromFlags() (proxy.Detected, error) {
+	host, port := strings.TrimSpace(onHostFlag), strings.TrimSpace(onPortFlag)
+	if a := strings.TrimSpace(onAddressFlag); a != "" {
+		if strings.Contains(a, ":") {
+			if i := strings.LastIndex(a, ":"); i >= 0 {
+				host, port = strings.TrimSpace(a[:i]), strings.TrimSpace(a[i+1:])
+			}
+		} else {
+			host = a
+		}
+	}
+	if host == "" {
+		host = strings.TrimSpace(os.Getenv("PROXY_HOST"))
+	}
+	if port == "" {
+		port = strings.TrimSpace(os.Getenv("PROXY_PORT"))
+	}
+	if host == "" {
+		return proxy.Detected{}, usageErr(fmt.Errorf("缺少代理主机：请用 --address HOST:PORT、--host HOST 或设置 PROXY_HOST"))
+	}
+	if port == "" {
+		port = "7892"
+	}
+	if _, err := strconv.Atoi(port); err != nil {
+		return proxy.Detected{}, usageErr(fmt.Errorf("无效的代理端口 %q", port))
+	}
+	return proxy.Detected{
+		Scheme:  "http",
+		Host:    host,
+		Port:    port,
+		Command: "手动指定",
+		Source:  "命令行参数",
+	}, nil
+}
+
+func init() {
+	onCmd.Flags().StringVarP(&onAddressFlag, "address", "a", "", "显式代理地址 HOST:PORT（HTTP；可配合 PROXY_HOST/PROXY_PORT）")
+	onCmd.Flags().StringVarP(&onHostFlag, "host", "H", "", "显式代理主机（默认取自 PROXY_HOST）")
+	onCmd.Flags().StringVarP(&onPortFlag, "port", "P", "", "显式代理端口（默认取自 PROXY_PORT 或 7892）")
 }
 
 var offCmd = &cobra.Command{

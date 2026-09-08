@@ -14,7 +14,7 @@ import (
 var applyCmd = &cobra.Command{
 	Use:   "apply",
 	Short: "根据系统代理自动设置 git 全局代理",
-	Long: `根据当前 macOS 系统代理设置 git 全局代理（http.proxy / https.proxy），
+	Long: `根据当前系统代理设置 git 全局代理（http.proxy / https.proxy），
 并提示在当前终端手动执行的 export 命令（子进程无法影响父 shell 环境变量）。
 执行前会保存系统代理与 git 代理状态快照，之后可用 proxyctl restore 恢复。`,
 	Args: usageArgs(cobra.NoArgs),

@@ -13,7 +13,7 @@ var statusJSON bool
 
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "查看当前 macOS 系统代理与 git 代理状态",
+	Short: "查看当前系统代理与 git 代理状态",
 	Args:  usageArgs(cobra.NoArgs),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		info, err := proxy.Get()
@@ -41,7 +41,7 @@ var statusCmd = &cobra.Command{
 			return nil
 		}
 
-		fmt.Fprintln(out, "=== macOS 系统代理 ===")
+		fmt.Fprintln(out, "=== 系统代理 ===")
 		fmt.Fprintln(out, proxyLine("HTTP", info.HTTPEnable, info.HTTPProxyURL()))
 		fmt.Fprintln(out, proxyLine("HTTPS", info.HTTPSEnable, info.HTTPSProxyURL()))
 		fmt.Fprintln(out, proxyLine("SOCKS", info.SOCKSEnable, info.SOCKSPProxyURL()))

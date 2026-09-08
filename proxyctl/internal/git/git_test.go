@@ -2,6 +2,7 @@ package git
 
 import (
 	"errors"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -89,6 +90,14 @@ func TestUnsetError(t *testing.T) {
 	}})
 	if err := c.Unset("http.proxy"); err == nil {
 		t.Fatal("Unset 应返回错误")
+	}
+}
+
+func TestExecRunnerUnsetMissingConfig(t *testing.T) {
+	t.Setenv("GIT_CONFIG_GLOBAL", filepath.Join(t.TempDir(), "gitconfig"))
+	_, err := (ExecRunner{}).Run("config", "--global", "--unset", "http.proxy")
+	if !errors.Is(err, ErrNotSet) {
+		t.Fatalf("--unset 不存在配置时应映射为 ErrNotSet，实际: %v", err)
 	}
 }
 

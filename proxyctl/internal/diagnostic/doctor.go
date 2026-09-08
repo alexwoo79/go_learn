@@ -74,7 +74,7 @@ func RunDoctor(ctx context.Context) *DoctorReport {
 	}
 
 	// --- System ---
-	systemSupported := runtime.GOOS == "darwin" || runtime.GOOS == "windows"
+	systemSupported := runtime.GOOS == "darwin" || runtime.GOOS == "windows" || runtime.GOOS == "linux"
 	add("System", "platform", StatusOK, runtime.GOOS)
 	if !systemSupported {
 		add("System", "system proxy", StatusSkip, "当前平台不支持系统代理管理")
@@ -251,6 +251,8 @@ func systemTools() []string {
 		tools = append(tools, "networksetup", "scutil", "lsof")
 	case "windows":
 		tools = append(tools, "netstat", "tasklist")
+	case "linux":
+		tools = append(tools, "lsof")
 	}
 	return tools
 }

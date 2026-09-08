@@ -234,7 +234,15 @@ proxyctl off   # 一键直连（等价于 clear，快照保留可 restore）
 ```
 
 未检测到代理程序时 `on` 会报错并提示先启动代理，或改用
-`proxyctl profile use <名称>` 手动指定。
+`proxyctl profile use <名称>` 手动指定。代理程序在其他机器上时，也可直接
+传入地址：
+
+```bash
+proxyctl on --address 10.10.10.113:7892
+```
+
+显式地址默认按“HTTP/HTTPS + SOCKS 同址混合端口”处理（与 proxy-on.sh 对
+GNOME 系统代理的设置一致）。
 
 ### apply 与当前终端
 
@@ -242,20 +250,45 @@ proxyctl off   # 一键直连（等价于 clear，快照保留可 restore）
 
 ## 平台支持
 
-| 功能 | macOS | Windows | 其他 Unix |
-| --- | --- | --- | --- |
-| `status` / `apply` / `clear` | ✓ | ✓（注册表） | ✗ |
-| `test` | ✓ | ✓ | ✓（无系统代理检测，回退环境变量/直连） |
-| `port` | ✓ | ✓ | ✓（需 `lsof`） |
+| 功能 | macOS | Windows | Linux + GNOME 桌面 | 其他 Unix |
+| --- | --- | --- | --- | --- |
+| `status` / `apply` / `clear` | ✓ | ✓（注册表） | ✓ | ✗ |
+| `on` / `off` / `restore` / `profile` | ✓ | ✓ | ✓ | ✗ |
+| `env` / `tools` | ✓ | ✓ | ✓ | ✓（仅文件型配置） |
+| `test` | ✓ | ✓ | ✓ | ✓（无系统代理检测，回退环境变量/直连） |
+| `port` | ✓ | ✓ | ✓ | ✓（需 `lsof`） |
 
 依赖的外部命令：
 
 - macOS：`scutil`、`networksetup`、`lsof`（系统自带）
 - Windows：`netstat`、`tasklist`、`taskkill`、`powershell`（系统自带）
-- 其他 Unix：`lsof`（macOS 自带；Linux 可用 `apt install lsof` 或 `yum install lsof` 安装）
+- Linux+GNOME：`gsettings`、`systemctl`、`dbus-update-activation-environment`
+  （后两者缺失时跳过会话导入，不影响配置文件写入）、`lsof`（可用
+  `apt install lsof` / `yum install lsof` 安装）
+- 其他 Unix：`lsof`
 - 所有平台：`git`、`ping`
 
 `test` 命令的 HTTP 请求优先使用检测到的系统代理（HTTP → HTTPS → SOCKS），未检测到时回退到环境变量代理或直连。
+
+### Linux 系统代理如何生效
+
+Linux 桌面没有统一的系统代理 API，proxyctl 与 Omarchy/GNOME 环境中的
+`proxy-on.sh` / `proxy-off.sh` 行为保持一致，一次性写三层：
+
+1. `gsettings org.gnome.system.proxy`（GNOME 桌面代理）；
+2. `~/.config/environment.d/proxy.conf` + `systemctl --user import-environment`
+   与 `dbus-update-activation-environment`（桌面会话启动应用继承环境变量）；
+3. `~/.config/chromium-flags.conf` 与 `~/.config/chrome-flags.conf`
+   （Chromium/Chrome 的 `--proxy-server`，需要重启浏览器后生效）。
+
+代理程序不在本机、而是局域网其他机器时，用显式地址而不要依赖自动检测：
+
+```bash
+proxyctl on --address 10.10.10.113:7892
+proxyctl on --host 10.10.10.113 --port 7892
+```
+
+`PROXY_HOST` / `PROXY_PORT` 环境变量可作为 --host/--port 缺省值。
 
 ## 退出码
 
