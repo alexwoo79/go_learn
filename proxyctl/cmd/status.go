@@ -61,6 +61,7 @@ var statusCmd = &cobra.Command{
 			fmt.Fprintf(out, "  https.proxy = %s\n", displayValue(httpsVal))
 		}
 
+		printOmarchyStatus(out)
 		return nil
 	},
 }

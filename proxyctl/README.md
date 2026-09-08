@@ -134,6 +134,32 @@ proxyctl restore   # 把系统代理与 git 代理恢复为 apply 前的状态
 
 未启用的代理项不会出现在输出中；未设置的 git 配置项为 `null`。
 
+### Omarchy 上的补充状态
+
+在 Omarchy 系统上（检测到 `omarchy` CLI 或 `/usr/share/omarchy`），
+`proxyctl status` 会在常规输出后追加“Omarchy 系统设置”段落，展示当前
+终端代理环境变量、会话环境文件（environment.d）、Chromium/Chrome flags，
+以及 TUN/mihomo 服务、虚拟网卡、上游地址与 DIRECT 直连保护规则。
+
+```console
+$ proxyctl status
+=== 系统代理 ===
+HTTP   代理已启用: http://10.10.10.113:7892
+...
+
+=== Omarchy 系统设置 ===
+终端代理环境变量:
+  http_proxy=http://10.10.10.113:7892
+  ...
+会话环境文件:
+  存在: /home/alex/.config/environment.d/proxy.conf
+  ...
+TUN/mihomo:
+  mihomo-tun.service: 已停止
+  虚拟网卡 Meta: 未创建
+  ...
+```
+
 ### doctor
 
 `doctor` 把 `status` / `test` / `port` 组合成一次完整诊断：

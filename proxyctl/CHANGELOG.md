@@ -3,6 +3,14 @@
 本项目按里程碑记录变更。当前处于开发阶段，版本为 `dev`，所有变更均未发布、
 未打 tag、未提交到远端。
 
+## [dev] 2026-09-08 — status 增加 Omarchy 系统详情
+
+- `proxyctl status` 在 Omarchy 上自动追加“Omarchy 系统设置”段落：
+  当前终端代理变量、会话环境文件、Chromium/Chrome flags、
+  TUN/mihomo 服务状态、Meta 网卡、上游地址与 DIRECT 直连保护域名。
+- 新增 `cmd/status_linux.go`（Omarchy 检测与只读状态收集），
+  非 Linux 平台为空实现；`--json` 输出结构不变。
+
 ## [dev] 2026-09-08 — Linux/GNOME 系统代理支持
 
 proxyctl 此前在 Linux 上只支持 `test` / `port` 等与系统代理无关的命令，

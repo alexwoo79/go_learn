@@ -20,6 +20,7 @@ cp -r scripts ~/proxyctl-scripts
 ```bash
 ./proxy-tui.sh                 # 交互菜单（status/on/off + TUN）
 ./proxy-status.sh              # 查看状态
+proxyctl status                # 在 Omarchy 上还会显示 TUN/mihomo 等系统详情
 ./proxy-tui.sh on 10.0.0.5:7890
 ./proxy-tui.sh off
 ```
