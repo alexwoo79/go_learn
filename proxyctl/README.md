@@ -290,6 +290,21 @@ proxyctl on --host 10.10.10.113 --port 7892
 
 `PROXY_HOST` / `PROXY_PORT` 环境变量可作为 --host/--port 缺省值。
 
+### Linux 辅助脚本
+
+仓库内 [scripts/](scripts/) 提供一组薄封装（proxy-on/off/status.sh 与
+proxy-tui.sh、可选 TUN 脚本），用于把 proxyctl 接入桌面快捷键或交互菜单：
+
+```bash
+cd scripts
+./proxy-tui.sh status
+./proxy-tui.sh on 10.10.10.113:7892
+./proxy-tui.sh off
+```
+
+当前终端生效需要 `source scripts/proxy-on.sh`（或
+`eval "$(proxyctl env)"`），详见 `scripts/README.md`。
+
 ## 退出码
 
 | 退出码 | 含义 |
