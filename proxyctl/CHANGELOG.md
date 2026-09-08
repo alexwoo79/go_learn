@@ -3,6 +3,15 @@
 本项目按里程碑记录变更。当前处于开发阶段，版本为 `dev`，所有变更均未发布、
 未打 tag、未提交到远端。
 
+## [dev] 2026-09-09 — OpenAI/ChatGPT 默认走上游代理
+
+- TUN 配置默认不再把 openai.com/chatgpt.com 等域名设为 DIRECT，而是跟随
+  上游代理，解决无法直连 OpenAI/ChatGPT 的网络环境；DeepSeek 与
+  pool.ntp.org 仍固定 DIRECT。
+- `proxyctl tun on` 与 `tun-on.sh` 新增 `--openai-direct`，可恢复旧的
+  OpenAI/ChatGPT 直连保护。
+- `tun-status.sh` 按当前配置动态显示 OpenAI/ChatGPT 的走代理/直连状态。
+
 ## [dev] 2026-09-09 — TUN 模式整合进 proxyctl
 
 - 新增 `proxyctl tun on/off/status`：生成与 tun-on.sh 一致的 mihomo TUN

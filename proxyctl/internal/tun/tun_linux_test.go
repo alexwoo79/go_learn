@@ -9,19 +9,23 @@ import (
 )
 
 func TestRenderConfig(t *testing.T) {
-	content := renderConfig("10.0.0.5", "7890")
+	content := renderConfig("10.0.0.5", "7890", false)
 	for _, want := range []string{
 		configMarker,
 		"server: 10.0.0.5",
 		"port: 7890",
 		"type: socks5",
-		"- DOMAIN-SUFFIX,openai.com,DIRECT",
-		"- DOMAIN-SUFFIX,chatgpt.com,DIRECT",
 		"- DOMAIN-SUFFIX,deepseek.com,DIRECT",
+		"OpenAI/ChatGPT follow the upstream proxy (default)",
 		"- MATCH,GLOBAL",
 	} {
 		if !strings.Contains(content, want) {
 			t.Errorf("renderConfig 缺少 %q:\n%s", want, content)
+		}
+	}
+	for _, notWant := range []string{"- DOMAIN-SUFFIX,openai.com,DIRECT", "- DOMAIN-SUFFIX,chatgpt.com,DIRECT"} {
+		if strings.Contains(content, notWant) {
+			t.Errorf("默认配置不应包含 %q:\n%s", notWant, content)
 		}
 	}
 	if strings.Contains(content, "%!") {
@@ -29,12 +33,26 @@ func TestRenderConfig(t *testing.T) {
 	}
 }
 
+func TestRenderConfigOpenAIDirect(t *testing.T) {
+	content := renderConfig("10.0.0.5", "7890", true)
+	for _, want := range []string{
+		"- DOMAIN-SUFFIX,openai.com,DIRECT",
+		"- DOMAIN-SUFFIX,chatgpt.com,DIRECT",
+		"- DOMAIN-SUFFIX,oaistatic.com,DIRECT",
+		`    - "*.openai.com"`,
+	} {
+		if !strings.Contains(content, want) {
+			t.Errorf("--openai-direct 配置应包含 %q:\n%s", want, content)
+		}
+	}
+}
+
 func TestParseConfig(t *testing.T) {
-	host, port, protected := parseConfig(renderConfig("10.0.0.5", "7890"))
+	host, port, protected := parseConfig(renderConfig("10.0.0.5", "7890", false))
 	if host != "10.0.0.5" || port != "7890" {
 		t.Errorf("parseConfig host/port = %q/%q", host, port)
 	}
-	want := []string{"openai.com", "chatgpt.com", "chatgpt.site", "chatgpt-team.site", "oaistatic.com", "oaiusercontent.com", "deepseek.com", "pool.ntp.org"}
+	want := []string{"deepseek.com", "pool.ntp.org"}
 	if !reflect.DeepEqual(protected, want) {
 		t.Errorf("protected = %#v, want %#v", protected, want)
 	}

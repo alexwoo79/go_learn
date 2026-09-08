@@ -5,7 +5,7 @@ package tun
 import "errors"
 
 // On 在其他平台不支持。
-func On(host, port string) error {
+func On(host, port string, openaiDirect bool) error {
 	return errors.New("TUN 模式仅在 Linux 上支持")
 }
 

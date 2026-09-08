@@ -21,6 +21,10 @@ else
 fi
 
 echo "== 直连保护 =="
-echo "  Codex/OpenAI: openai.com / chatgpt.com / chatgpt.site / oaistatic.com / oaiusercontent.com"
-echo "  DeepSeek:     deepseek.com"
-echo "  (以上域名在 mihomo 规则里均为 DIRECT，不会进入 TUN)"
+if [ -f "$CFG_FILE" ] && rg -q 'DOMAIN-SUFFIX,openai.com,DIRECT' "$CFG_FILE" 2>/dev/null; then
+    echo "  OpenAI/ChatGPT: DIRECT（使用 --openai-direct 时）"
+else
+    echo "  OpenAI/ChatGPT: 走上游代理（默认）"
+fi
+echo "  DeepSeek:     deepseek.com (DIRECT)"
+echo "  NTP:          pool.ntp.org (DIRECT)"

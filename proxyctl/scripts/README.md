@@ -46,8 +46,10 @@ source ~/proxyctl-scripts/proxy-off.sh
 
 `tun-*.sh` 依赖 `mihomo`（默认 `~/.local/bin/mihomo`），开启系统级 TUN，
 所有应用自动走代理。上游地址可直接用 `--address` 指定，或读取 proxyctl
-生成的 `~/.config/environment.d/proxy.conf`；Codex/OpenAI 与 DeepSeek
-域名固定 DIRECT，不会进入 TUN。
+生成的 `~/.config/environment.d/proxy.conf`。默认 OpenAI/ChatGPT 域名走
+上游代理（与 proxyctl tun 一致），DeepSeek 固定 DIRECT，不会进入 TUN；
+旧直连保护可用 `tun-on.sh --openai-direct` 或
+`proxyctl tun on --openai-direct` 恢复。
 
 ```bash
 ./tun-on.sh

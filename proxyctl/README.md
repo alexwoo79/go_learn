@@ -374,13 +374,19 @@ cd scripts
 ### proxyctl tun（mihomo 系统级 TUN）
 
 `proxyctl tun` 直接把 TUN 模式整合进程序：生成与 `tun-on.sh` 一致的受管
-mihomo 配置（含 Codex/OpenAI、DeepSeek DIRECT 直连保护），校验后通过
-systemd 用户服务 `mihomo-tun.service` 启动：
+mihomo 配置（DeepSeek DIRECT 直连保护；OpenAI/ChatGPT 默认走上游代理），
+校验后通过 systemd 用户服务 `mihomo-tun.service` 启动：
 
 ```bash
 proxyctl tun on --address 10.0.0.5:7890
 proxyctl tun status
 proxyctl tun off
+```
+
+网络可直连 OpenAI/ChatGPT、想恢复旧直连保护时加 `--openai-direct`：
+
+```bash
+proxyctl tun on --address 10.0.0.5:7890 --openai-direct
 ```
 
 上游地址缺省按 `--address/--host/--port` → `PROXY_HOST/PROXY_PORT` →

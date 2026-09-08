@@ -16,6 +16,7 @@ var (
 	tunOnAddressFlag string
 	tunOnHostFlag    string
 	tunOnPortFlag    string
+	tunOpenAIDirect  bool
 )
 
 var tunCmd = &cobra.Command{
@@ -24,7 +25,8 @@ var tunCmd = &cobra.Command{
 	Long: `开启/关闭/查看系统级 TUN 代理（mihomo）。TUN 在网络层接管所有
 应用的流量，因此无需再为 npm/pip/cargo 等工具单独配置代理。
 
-Codex/OpenAI 与 DeepSeek 域名固定 DIRECT，不会进入 TUN。
+默认 OpenAI/ChatGPT 系列域名跟随上游代理；DeepSeek 固定 DIRECT。
+若网络可以直连 OpenAI/ChatGPT 并希望保留直连保护，可加 --openai-direct。
 
 用法示例：
   proxyctl tun on --address 10.0.0.5:7890
@@ -39,7 +41,8 @@ Codex/OpenAI 与 DeepSeek 域名固定 DIRECT，不会进入 TUN。
 var tunOnCmd = &cobra.Command{
 	Use:   "on",
 	Short: "生成 mihomo TUN 配置并启动",
-	Long: `生成受管 mihomo TUN 配置（含 OpenAI/DeepSeek DIRECT 保护规则），
+	Long: `生成受管 mihomo TUN 配置（DeepSeek DIRECT 保护；
+OpenAI/ChatGPT 默认走上游代理，--openai-direct 可恢复 DIRECT 保护），
 用 mihomo -t 校验后通过 systemd 用户服务 mihomo-tun.service 启动。
 
 上游地址缺省按以下顺序解析：--address/--host/--port、
@@ -50,13 +53,18 @@ PROXY_HOST/PROXY_PORT、当前系统代理、已有 mihomo 配置。`,
 		if err != nil {
 			return err
 		}
-		if err := tun.On(host, port); err != nil {
+		if err := tun.On(host, port, tunOpenAIDirect); err != nil {
 			return fmt.Errorf("开启 TUN 失败: %w", err)
 		}
 		out := cmd.OutOrStdout()
 		fmt.Fprintln(out, "TUN 代理已开启")
 		fmt.Fprintf(out, "  上游: socks5://%s:%s\n", host, port)
-		fmt.Fprintln(out, "  Codex/OpenAI 与 DeepSeek: 直连（不受 TUN 影响）")
+		if tunOpenAIDirect {
+			fmt.Fprintln(out, "  OpenAI/ChatGPT 与 DeepSeek: 直连（不受 TUN 影响）")
+		} else {
+			fmt.Fprintln(out, "  OpenAI/ChatGPT: 走上游代理")
+			fmt.Fprintln(out, "  DeepSeek: 直连（不受 TUN 影响）")
+		}
 		fmt.Fprintln(out, "  关闭请运行: proxyctl tun off")
 		return nil
 	},
@@ -175,4 +183,5 @@ func init() {
 	tunOnCmd.Flags().StringVarP(&tunOnAddressFlag, "address", "a", "", "上游代理地址 HOST:PORT")
 	tunOnCmd.Flags().StringVarP(&tunOnHostFlag, "host", "H", "", "上游代理主机（默认 PROXY_HOST 或当前系统代理）")
 	tunOnCmd.Flags().StringVarP(&tunOnPortFlag, "port", "P", "", "上游代理端口（默认 PROXY_PORT 或当前系统代理）")
+	tunOnCmd.Flags().BoolVar(&tunOpenAIDirect, "openai-direct", false, "保留 OpenAI/ChatGPT 域名 DIRECT 直连保护（默认走上游代理）")
 }

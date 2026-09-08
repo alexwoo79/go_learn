@@ -68,8 +68,38 @@ func isExecutable(p string) bool {
 	return err == nil && !info.IsDir() && info.Mode()&0o111 != 0
 }
 
-// renderConfig 生成与 tun-on.sh 一致的受管 mihomo TUN 配置。
-func renderConfig(host, port string) string {
+// openaiFakeFilterLines 是 OpenAI/ChatGPT 域名在 fake-ip-filter 中的直连
+// DNS 行（仅在 --openai-direct 时写入）。
+const openaiFakeFilterLines = `    - "*.openai.com"
+    - "*.chatgpt.com"
+    - "*.chatgpt.site"
+    - "*.chatgpt-team.site"
+    - "*.oaistatic.com"
+    - "*.oaiusercontent.com"
+`
+
+// openaiDirectRuleLines 是 OpenAI/ChatGPT 域名走 DIRECT 的规则行
+// （仅在 --openai-direct 时写入）。
+const openaiDirectRuleLines = `  # Codex / OpenAI — always direct (--openai-direct)
+  - DOMAIN-SUFFIX,openai.com,DIRECT
+  - DOMAIN-SUFFIX,chatgpt.com,DIRECT
+  - DOMAIN-SUFFIX,chatgpt.site,DIRECT
+  - DOMAIN-SUFFIX,chatgpt-team.site,DIRECT
+  - DOMAIN-SUFFIX,oaistatic.com,DIRECT
+  - DOMAIN-SUFFIX,oaiusercontent.com,DIRECT
+`
+
+// renderConfig 生成受管 mihomo TUN 配置。
+// openaiDirect 为 true 时保留 OpenAI/ChatGPT 直连保护；默认 false 让这些
+// 域名跟随上游代理（DeepSeek 与 NTP 始终 DIRECT）。
+func renderConfig(host, port string, openaiDirect bool) string {
+	filter, rules := "", ""
+	if openaiDirect {
+		filter = openaiFakeFilterLines
+		rules = openaiDirectRuleLines
+	} else {
+		rules = "  # OpenAI/ChatGPT follow the upstream proxy (default)\n"
+	}
 	return fmt.Sprintf(`%s
 # Upstream: %s:%s (socks5)
 
@@ -113,12 +143,7 @@ dns:
     - 223.5.5.5
     - 119.29.29.29
   fake-ip-filter:
-    - "*.openai.com"
-    - "*.chatgpt.com"
-    - "*.chatgpt.site"
-    - "*.chatgpt-team.site"
-    - "*.oaistatic.com"
-    - "*.oaiusercontent.com"
+%s
     - "*.deepseek.com"
     - "*.lan"
     - "*.local"
@@ -138,13 +163,7 @@ proxy-groups:
       - upstream
 
 rules:
-  # Codex / OpenAI — always direct
-  - DOMAIN-SUFFIX,openai.com,DIRECT
-  - DOMAIN-SUFFIX,chatgpt.com,DIRECT
-  - DOMAIN-SUFFIX,chatgpt.site,DIRECT
-  - DOMAIN-SUFFIX,chatgpt-team.site,DIRECT
-  - DOMAIN-SUFFIX,oaistatic.com,DIRECT
-  - DOMAIN-SUFFIX,oaiusercontent.com,DIRECT
+%s
   # DeepSeek — always direct
   - DOMAIN-SUFFIX,deepseek.com,DIRECT
   # Keep time sync and LAN local
@@ -155,11 +174,11 @@ rules:
   - IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
   # Everything else goes through the upstream proxy
   - MATCH,GLOBAL
-`, configMarker, host, port, host, port)
+`, configMarker, host, port, filter, host, port, rules)
 }
 
 // On 写配置、校验并启动 mihomo TUN 用户服务。
-func On(host, port string) error {
+func On(host, port string, openaiDirect bool) error {
 	mihomo, err := findMihomo()
 	if err != nil {
 		return err
@@ -169,7 +188,7 @@ func On(host, port string) error {
 	if err := os.MkdirAll(filepath.Dir(cfg), 0o755); err != nil {
 		return err
 	}
-	if err := writeFileAtomic(cfg, renderConfig(host, port), 0o644); err != nil {
+	if err := writeFileAtomic(cfg, renderConfig(host, port, openaiDirect), 0o644); err != nil {
 		return fmt.Errorf("写入 mihomo 配置失败: %w", err)
 	}
 	if out, err := exec.Command(mihomo, "-t", "-f", cfg).CombinedOutput(); err != nil {
